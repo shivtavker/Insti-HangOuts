@@ -2,6 +2,15 @@ import { Component, ViewChild, OnInit } from '@angular/core';
 import {$WebSocket, WebSocketSendMode} from 'angular2-websocket/angular2-websocket';
 // import {WebSocketService} from './websocket.service';
 
+const config = {
+  wssHost: 'ws://10.22.21.182:8080/'
+//   wssHost: 'ws://localhost:8080/'
+//   wssHost: 'ws://students.iitm.ac.in:443/'
+  // wssHost: 'wss://example.com/myWebSocket'
+};
+
+var wsc = new $WebSocket(config.wssHost);
+
 @Component({
     selector: 'my-app',
     templateUrl: './app.component.html',
@@ -18,14 +27,6 @@ PeerVideoStream;
 peerVideo;
 callState = 0;
 
-config = {
-//   wssHost: 'ws://10.22.21.182:8000/'
-  wssHost: 'ws://localhost:8080/'
-  // wssHost: 'wss://example.com/myWebSocket'
-};
-
-wsc = new $WebSocket(this.config.wssHost);
-
 // peerConn = null;
 peerConnCfg = {'iceServers': 
     [{'url': 'stun:stun.services.mozilla.com'}, 
@@ -36,15 +37,14 @@ rtcPeerConnection : RTCPeerConnection = null;
 
     constructor() {
         this.rtcPeerConnection = new RTCPeerConnection(this.peerConnCfg);
-        this.wsc.onMessage((evt) => {
+        wsc.onMessage((evt) => {
+            console.log("WSC.OnMessgae Function");
             let signal = null;
             console.log(JSON.parse(evt.data));
-            if (this.callState == 0) {
-                this.answerCall();
-            }
             signal = JSON.parse(evt.data);
             if (signal.sdp) {
                 console.log("Recieved SDP from peer");
+                console.log(signal);
                 this.rtcPeerConnection.setRemoteDescription(new RTCSessionDescription(signal.sdp));
             }
             else if (signal.candidate) {
@@ -55,8 +55,11 @@ rtcPeerConnection : RTCPeerConnection = null;
                 console.log("Recieved Close Call from Peer");
                 this.endCall();
             }
+            if (this.callState == 0) {
+                this.answerCall();
+            }
         });
-        this.wsc.setSend4Mode(WebSocketSendMode.Direct);
+        wsc.setSend4Mode(WebSocketSendMode.Direct);
     }
 
     ngOnInit(){
@@ -140,6 +143,7 @@ rtcPeerConnection : RTCPeerConnection = null;
     }
 
     prepareCall(){
+        console.log("Prepare Call Function");
         console.log(this.rtcPeerConnection);
         this.callState = 1;
         // send any ice candidates to the other peer
@@ -149,57 +153,74 @@ rtcPeerConnection : RTCPeerConnection = null;
     }
 
     initiateCall(){
+        console.log("Initiate Call Function");
         this.prepareCall();
         this.rtcPeerConnection.addStream(this.OwnVideoStream);
+        console.log(this.OwnVideoStream);
+        console.log("Own Video Stream Added!!");
         this.createAndSendOffer();
     }
     
     answerCall(){
+        console.log("Answer Call Funtion");
         this.prepareCall();
         this.rtcPeerConnection.addStream(this.OwnVideoStream);
+        console.log(this.OwnVideoStream);
+        console.log("Own Video Stream Added!!");
         this.createAndSendAnswer();
     }
 
     createAndSendOffer(){
-        // console.log("Create Offer Function");
+        console.log("Create Offer Function");
         this.rtcPeerConnection.createOffer()
             .then(offer => {
                 console.log("Create Offer Function");
                 let off = new RTCSessionDescription(offer);
                 this.rtcPeerConnection.setLocalDescription(new RTCSessionDescription(off))
                         .then(() => {
-                            // console.log(JSON.stringify({"sdp" : off}));
-                            this.wsc.send(JSON.stringify({"sdp" : off}));
+                            console.log("set Offer Local Description!!");
+                            console.log(JSON.stringify({"sdp" : off}));
+                            wsc.send(JSON.stringify({"sdp" : off}));
                         }).catch((err) => {
                             console.log(err);
                 });
-            })
+            }).catch(err => {
+                console.log(err);
+            });
     }
 
     createAndSendAnswer(){
         this.rtcPeerConnection.createAnswer()
             .then(answer => {
-            let ans = new RTCSessionDescription(answer);
-            this.rtcPeerConnection.setLocalDescription(new RTCSessionDescription(ans))
-                                    .then(() => {
-                                        this.wsc.send(JSON.stringify({"sdp" : ans}));
-                                    }).catch((err) => {
-                                        console.log(err);
-                                    });
-            }).catch((err) => {
-                    console.log(err);
-        });
+                console.log("Create Answer Function");
+                let ans = new RTCSessionDescription(answer);
+                this.rtcPeerConnection.setLocalDescription(new RTCSessionDescription(ans))
+                                        .then(() => {
+                                            console.log("set Answer Local Description!!");
+                                            console.log(JSON.stringify({"sdp" : ans}));
+                                            wsc.send(JSON.stringify({"sdp" : ans}));
+                                        }).catch((err) => {
+                                            console.log(err);
+                                        });
+                }).catch((err) => {
+                        console.log(err);
+            });
     }
 
     onIceCandidateHandler(evt){
+        console.log("OnIceCandidatehandler Function");
+        console.log(evt);
+        console.log(wsc);
         if(!evt || !evt.candidate)
             return;
-        this.wsc.send(JSON.stringify({"candidate" : evt.candidate}));
+        console.log(JSON.stringify({"candidate" : evt.candidate}));
+        wsc.send(JSON.stringify({"candidate" : evt.candidate}));
         console.log("IceCandidateHandler Function Completed");
     }
 
     streamArrived(evt){
-        console.log("Stream Arrived: " + evt);
+        console.log("streamArrived Function");
+        console.log(evt);
         document.getElementById('peervideo').src = URL.createObjectURL(evt.stream);
         document.getElementById('peervideo').play();
         console.log(document.getElementById('peervideo'));
