@@ -1,0 +1,127 @@
+#!/usr/bin/env node
+
+/**
+ * Module dependencies.
+ */
+
+var app = require('../app');
+var debug = require('debug')('angular2-nodejs:server');
+var http = require('http');
+var WebSocketServer = require('ws').Server;
+
+/**
+ * Get port from environment and store in Express.
+ */
+
+var port = normalizePort(process.env.PORT || '8080');
+app.set('port', port);
+
+/**
+ * Create HTTP server.
+ */
+
+var server = http.createServer(app);
+
+/**
+ * Listen on provided port, on all network interfaces.
+ */
+
+server.listen(port);
+server.on('error', onError);
+server.on('listening', onListening);
+
+/**
+ * Normalize a port into a number, string, or false.
+ */
+
+function normalizePort(val) {
+  var port = parseInt(val, 10);
+
+  if (isNaN(port)) {
+    // named pipe
+    return val;
+  }
+
+  if (port >= 0) {
+    // port number
+    return port;
+  }
+
+  return false;
+}
+
+/**
+ * Event listener for HTTP server "error" event.
+ */
+
+function onError(error) {
+  if (error.syscall !== 'listen') {
+    throw error;
+  }
+
+  var bind = typeof port === 'string'
+    ? 'Pipe ' + port
+    : 'Port ' + port;
+
+  // handle specific listen errors with friendly messages
+  switch (error.code) {
+    case 'EACCES':
+      console.error(bind + ' requires elevated privileges');
+      process.exit(1);
+      break;
+    case 'EADDRINUSE':
+      console.error(bind + ' is already in use');
+      process.exit(1);
+      break;
+    default:
+      throw error;
+  }
+}
+
+/**
+ * Event listener for HTTP server "listening" event.
+ */
+
+function onListening() {
+  var addr = server.address();
+  var bind = typeof addr === 'string'
+    ? 'pipe ' + addr
+    : 'port ' + addr.port;
+  debug('Listening on ' + bind);
+}
+
+// create the WebSocket server
+wss = new WebSocketServer({server: server});  
+console.log("WebSocket Secure server is up and running.");
+
+var clients = [];
+
+/** successful connection */
+wss.on('connection', function (client) {
+  console.log("A new WebSocket client was connected.");
+  clients.push(client);
+  console.log("Active Clients: " + clients);
+  /** incomming message */
+  client.on('message', function (message) {
+    /** broadcast message to all clients */
+    wss.broadcast(message, client);
+    console.log(message, client);
+  });
+});
+// broadcasting the message to all WebSocket clients.
+wss.broadcast = function (data, exclude) {
+  var i = 0, n = clients ? clients.length : 0, client = null;
+  if (n < 1) return;
+  console.log("Broadcasting message to all " + n + " WebSocket clients.");
+  for (i=0; i < n; i++) {
+    console.log("Reached For Loop")
+    client = clients[i];
+    // don't send the message to the sender...
+    if (client === exclude) continue;
+    if (client.readyState === client.OPEN) { 
+      client.send(data);
+      console.log("Sent Data to Client");
+    }
+    else console.error('Error: the client state is ' + client.readyState);
+  }
+};
