@@ -3,13 +3,55 @@ import {$WebSocket, WebSocketSendMode} from 'angular2-websocket/angular2-websock
 // import {WebSocketService} from './websocket.service';
 
 const config = {
-  wssHost: 'ws://10.22.21.182:8080/'
-//   wssHost: 'ws://localhost:8080/'
+  wssHost: 'wss://10.22.21.247:8080/'
+//   wssHost: 'wss://localhost:8080/'
 //   wssHost: 'ws://students.iitm.ac.in:443/'
   // wssHost: 'wss://example.com/myWebSocket'
 };
 
+const peerConnCfg = {'iceServers': [
+    // [{'url': 'stun:74.125.142.127:19302'}, 
+    // {'url': 'stun:stun.l.google.com:19302'},
+    // {url:'stun:stun01.sipphone.com'},
+    // {url:'stun:stun.ekiga.net'},
+    // {url:'stun:stun.fwdnet.net'},
+    // {url:'stun:stun.ideasip.com'},
+    // {url:'stun:stun.iptel.org'},
+    // {url:'stun:stun.rixtelecom.se'},
+    // {url:'stun:stun.schlund.de'},
+    // {url:'stun:stun.l.google.com:19302'},
+    // {url:'stun:stun1.l.google.com:19302'},
+    // {url:'stun:stun2.l.google.com:19302'},
+    // {url:'stun:stun3.l.google.com:19302'},
+    // {url:'stun:stun4.l.google.com:19302'},
+    // {url:'stun:stunserver.org'},
+    // {url:'stun:stun.softjoys.com'},
+    // {url:'stun:stun.voiparound.com'},
+    // {url:'stun:stun.voipbuster.com'},
+    // {url:'stun:stun.voipstunt.com'},
+    // {url:'stun:stun.voxgratia.org'},
+    // {url:'stun:stun.xten.com'},
+    {
+        url: 'turn:numb.viagenie.ca',
+        credential: 'muazkh',
+        username: 'webrtc@live.com'
+    },
+    // {
+    //     url: 'turn:192.158.29.39:3478?transport=udp',
+    //     credential: 'JZEOEt2V3Qb0y27GRntt2u2PAYA=',
+    //     username: '28224511:1379330808'
+    // },
+    // {
+    //     url: 'turn:192.158.29.39:3478?transport=tcp',
+    //     credential: 'JZEOEt2V3Qb0y27GRntt2u2PAYA=',
+    //     username: '28224511:1379330808'
+    // }
+  ]
+};
+
 var wsc = new $WebSocket(config.wssHost);
+
+var rtcPeerConnection = new RTCPeerConnection(peerConnCfg);
 
 @Component({
     selector: 'my-app',
@@ -27,16 +69,8 @@ PeerVideoStream;
 peerVideo;
 callState = 0;
 
-// peerConn = null;
-peerConnCfg = {'iceServers': 
-    [{'url': 'stun:stun.services.mozilla.com'}, 
-     {'url': 'stun:stun.l.google.com:19302'}]
-  };
-
-rtcPeerConnection : RTCPeerConnection = null;
-
     constructor() {
-        this.rtcPeerConnection = new RTCPeerConnection(this.peerConnCfg);
+        // rtcPeerConnection = new RTCPeerConnection(this.peerConnCfg);
         wsc.onMessage((evt) => {
             console.log("WSC.OnMessgae Function");
             let signal = null;
@@ -45,11 +79,11 @@ rtcPeerConnection : RTCPeerConnection = null;
             if (signal.sdp) {
                 console.log("Recieved SDP from peer");
                 console.log(signal);
-                this.rtcPeerConnection.setRemoteDescription(new RTCSessionDescription(signal.sdp));
+                rtcPeerConnection.setRemoteDescription(new RTCSessionDescription(signal.sdp));
             }
             else if (signal.candidate) {
                 console.log("Recieved ICE Candidate from Peer");
-                this.rtcPeerConnection.addIceCandidate(new RTCIceCandidate(signal.candidate));
+                rtcPeerConnection.addIceCandidate(new RTCIceCandidate(signal.candidate));
             }
             else if (signal.closeConnection) {
                 console.log("Recieved Close Call from Peer");
@@ -66,6 +100,7 @@ rtcPeerConnection : RTCPeerConnection = null;
         let ownVideo = this.OwnVideo.nativeElement;
         this.peerVideo = this.PeerVideo.nativeElement;
         console.log(this.peerVideo);
+        console.log(rtcPeerConnection);
 
         if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia){
             navigator.mediaDevices.getUserMedia({video : true, audio : true})
@@ -73,6 +108,7 @@ rtcPeerConnection : RTCPeerConnection = null;
                                         console.log(stream);
                                         this.OwnVideoStream = stream;
                                         ownVideo.src = URL.createObjectURL(stream);
+                                        ownVideo.muted = "muted";
                                         ownVideo.play();
                                     })
                                     .catch(err => {
@@ -87,17 +123,17 @@ rtcPeerConnection : RTCPeerConnection = null;
         //         })
         //         .subscribe((evt) => {
         //             let signal = null;
-        //             if (!this.rtcPeerConnection) {
+        //             if (!rtcPeerConnection) {
         //                 this.answerCall();
         //             }
         //             signal = JSON.parse(evt.data);
         //             if (signal.sdp) {
         //                 console.log("Recieved SDP from peer");
-        //                 this.rtcPeerConnection.setRemoteDescription(new RTCSessionDescription(signal.sdp));
+        //                 rtcPeerConnection.setRemoteDescription(new RTCSessionDescription(signal.sdp));
         //             }
         //             else if (signal.candidate) {
         //                 console.log("Recieved ICE Candidate from Peer");
-        //                 this.rtcPeerConnection.addIceCandidate(new RTCIceCandidate(signal.candidate));
+        //                 rtcPeerConnection.addIceCandidate(new RTCIceCandidate(signal.candidate));
         //             }
         //             else if (signal.closeConnection) {
         //                 console.log("Recieved Close Call from Peer");
@@ -107,14 +143,14 @@ rtcPeerConnection : RTCPeerConnection = null;
         //             console.log(err);
         //         });
 
-    //     this.rtcPeerConnection.onaddstream = event => {
+    //     rtcPeerConnection.onaddstream = event => {
     //         alert("A stream (id: '" + event.stream.id + "') has been added to this connection.");
     //         peerVideo.src = URL.createObjectURL(event.stream);
     //         peerVideo.play();
     //     };
 
-    //     this.rtcPeerConnection.createOffer(offer => {
-    //         this.rtcPeerConnection.setLocalDescription(new RTCSessionDescription(offer))
+    //     rtcPeerConnection.createOffer(offer => {
+    //         rtcPeerConnection.setLocalDescription(new RTCSessionDescription(offer))
     //                                 .then(() => {
     //                                     console.log('send the offer to a server to be forwarded to the other peer');
     //                                 })
@@ -127,8 +163,8 @@ rtcPeerConnection : RTCPeerConnection = null;
     //         console.log('Could not create offer, Error: ' + err);
     //     });
 
-    //     this.rtcPeerConnection.createAnswer(answer => {
-    //         this.rtcPeerConnection.setLocalDescription(new RTCSessionDescription(answer))
+    //     rtcPeerConnection.createAnswer(answer => {
+    //         rtcPeerConnection.setLocalDescription(new RTCSessionDescription(answer))
     //                                 .then(() => {
     //                                     console.log('send the answer to a server to be forwarded back to the caller');
     //                                 })
@@ -144,18 +180,18 @@ rtcPeerConnection : RTCPeerConnection = null;
 
     prepareCall(){
         console.log("Prepare Call Function");
-        console.log(this.rtcPeerConnection);
+        console.log(rtcPeerConnection);
         this.callState = 1;
         // send any ice candidates to the other peer
-        this.rtcPeerConnection.onicecandidate = this.onIceCandidateHandler;
+        rtcPeerConnection.onicecandidate = this.onIceCandidateHandler;
         // Peer Stream Arrived
-        this.rtcPeerConnection.onaddstream = this.streamArrived;
+        rtcPeerConnection.onaddstream = this.streamArrived;
     }
 
     initiateCall(){
         console.log("Initiate Call Function");
         this.prepareCall();
-        this.rtcPeerConnection.addStream(this.OwnVideoStream);
+        rtcPeerConnection.addStream(this.OwnVideoStream);
         console.log(this.OwnVideoStream);
         console.log("Own Video Stream Added!!");
         this.createAndSendOffer();
@@ -164,7 +200,7 @@ rtcPeerConnection : RTCPeerConnection = null;
     answerCall(){
         console.log("Answer Call Funtion");
         this.prepareCall();
-        this.rtcPeerConnection.addStream(this.OwnVideoStream);
+        rtcPeerConnection.addStream(this.OwnVideoStream);
         console.log(this.OwnVideoStream);
         console.log("Own Video Stream Added!!");
         this.createAndSendAnswer();
@@ -172,11 +208,11 @@ rtcPeerConnection : RTCPeerConnection = null;
 
     createAndSendOffer(){
         console.log("Create Offer Function");
-        this.rtcPeerConnection.createOffer()
+        rtcPeerConnection.createOffer()
             .then(offer => {
                 console.log("Create Offer Function");
                 let off = new RTCSessionDescription(offer);
-                this.rtcPeerConnection.setLocalDescription(new RTCSessionDescription(off))
+                rtcPeerConnection.setLocalDescription(new RTCSessionDescription(off))
                         .then(() => {
                             console.log("set Offer Local Description!!");
                             console.log(JSON.stringify({"sdp" : off}));
@@ -190,11 +226,11 @@ rtcPeerConnection : RTCPeerConnection = null;
     }
 
     createAndSendAnswer(){
-        this.rtcPeerConnection.createAnswer()
+        rtcPeerConnection.createAnswer()
             .then(answer => {
                 console.log("Create Answer Function");
                 let ans = new RTCSessionDescription(answer);
-                this.rtcPeerConnection.setLocalDescription(new RTCSessionDescription(ans))
+                rtcPeerConnection.setLocalDescription(new RTCSessionDescription(ans))
                                         .then(() => {
                                             console.log("set Answer Local Description!!");
                                             console.log(JSON.stringify({"sdp" : ans}));
@@ -227,8 +263,7 @@ rtcPeerConnection : RTCPeerConnection = null;
     }
 
     endCall(){
-        this.rtcPeerConnection.close();
-        this.rtcPeerConnection = null;
+        rtcPeerConnection.close();
         this.PeerVideo.nativeElement.src = "";
     }
 

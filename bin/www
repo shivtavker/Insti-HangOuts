@@ -6,8 +6,15 @@
 
 var app = require('../app');
 var debug = require('debug')('angular2-nodejs:server');
-var http = require('http');
+var https = require('https');
+var fs = require('fs');
 var WebSocketServer = require('ws').Server;
+
+/* Local SSL Certificate */
+
+const pkey = fs.readFileSync('./ssl/key.pem'),
+  pcert = fs.readFileSync('./ssl/cert.pem'),
+  options = {key: pkey, cert: pcert, passphrase: '123456789'};
 
 /**
  * Get port from environment and store in Express.
@@ -20,7 +27,7 @@ app.set('port', port);
  * Create HTTP server.
  */
 
-var server = http.createServer(app);
+var server = https.createServer(options, app);
 
 /**
  * Listen on provided port, on all network interfaces.
@@ -92,6 +99,7 @@ function onListening() {
 
 // create the WebSocket server
 wss = new WebSocketServer({server: server});  
+console.log({server: server});
 console.log("WebSocket Secure server is up and running.");
 
 var clients = [];
