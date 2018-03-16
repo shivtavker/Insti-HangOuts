@@ -3,7 +3,7 @@ import {$WebSocket, WebSocketSendMode} from 'angular2-websocket/angular2-websock
 // import {WebSocketService} from './websocket.service';
 
 const config = {
-  wssHost: 'wss://10.22.21.247:8080/'
+  wssHost: 'wss://www.shivvideocall.org.in/'
 //   wssHost: 'wss://localhost:8080/'
 //   wssHost: 'ws://students.iitm.ac.in:443/'
   // wssHost: 'wss://example.com/myWebSocket'
@@ -19,7 +19,7 @@ const peerConnCfg = {'iceServers': [
     // {url:'stun:stun.iptel.org'},
     // {url:'stun:stun.rixtelecom.se'},
     // {url:'stun:stun.schlund.de'},
-    // {url:'stun:stun.l.google.com:19302'},
+    {url:'stun:stun.l.google.com:19302'},
     // {url:'stun:stun1.l.google.com:19302'},
     // {url:'stun:stun2.l.google.com:19302'},
     // {url:'stun:stun3.l.google.com:19302'},
@@ -31,11 +31,11 @@ const peerConnCfg = {'iceServers': [
     // {url:'stun:stun.voipstunt.com'},
     // {url:'stun:stun.voxgratia.org'},
     // {url:'stun:stun.xten.com'},
-    {
-        url: 'turn:numb.viagenie.ca',
-        credential: 'muazkh',
-        username: 'webrtc@live.com'
-    },
+    // {
+    //     url: 'turn:numb.viagenie.ca',
+    //     credential: 'muazkh',
+    //     username: 'webrtc@live.com'
+    // },
     // {
     //     url: 'turn:192.158.29.39:3478?transport=udp',
     //     credential: 'JZEOEt2V3Qb0y27GRntt2u2PAYA=',
